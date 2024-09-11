@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
-import yaml
+from config import config
 
 Base = declarative_base()
 
@@ -26,10 +26,7 @@ class DNSRecord(Base):
     domain = relationship("Domain", back_populates="records")
 
 def get_session():
-    with open('config/config.yaml', 'r') as f:
-        config = yaml.safe_load(f)
-    
-    engine = create_engine(config['database']['url'])
+    engine = create_engine(config.DATABASE_URL)
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
     return Session()

@@ -1,17 +1,73 @@
 import requests
 import xml.etree.ElementTree as ET
-import yaml
+import logging
+from config import config
+
+logger = logging.getLogger(__name__)
 
 class NamecheapAPI:
     def __init__(self):
-        with open('config/config.yaml', 'r') as f:
-            config = yaml.safe_load(f)
-        
-        self.api_user = config['namecheap']['api_user']
-        self.api_key = config['namecheap']['api_key']
-        self.client_ip = config['namecheap']['client_ip']
-        self.base_url = "https://api.namecheap.com/xml.response"
+        self.api_user = config.NAMECHEAP_API_USER
+        self.api_key = config.NAMECHEAP_API_KEY
+        self.client_ip = config.NAMECHEAP_CLIENT_IP
+        self.base_url = config.NAMECHEAP_BASE_URL
 
+    def test_connection(self):
+        try:
+            params = {
+                'ApiUser': self.api_user,
+                'ApiKey': self.api_key,
+                'UserName': self.api_user,
+                'ClientIp': self.client_ip,
+                'Command': 'namecheap.domains.getList'
+            }
+            response = requests.get(self.base_url, params=params)
+            response.raise_for_status()
+            
+            # Log the raw response content
+            logger.debug(f"Namecheap API raw response: {response.content}")
+            
+            root = ET.fromstring(response.content)
+            
+            # Check if the response contains an ApiResponse element
+            api_response = root.find('ApiResponse')
+            if api_response is None:
+                logger.error("Namecheap API response doesn't contain an ApiResponse element.")
+                return False
+            
+            # Check the CommandResponse status
+            command_response = api_response.find('CommandResponse')
+            if command_response is None:
+                logger.error("Namecheap API response doesn't contain a CommandResponse element.")
+                return False
+            
+            status = command_response.get('Status')
+            if status == "OK":
+                logger.info("Namecheap API connection successful")
+                return True
+            else:
+                errors = api_response.findall('.//Errors/Error')
+                error_messages = [error.text for error in errors]
+                logger.error(f"Namecheap API connection failed. Errors: {', '.join(error_messages)}")
+                return False
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Namecheap API connection failed: {e}")
+            return False
+        except ET.ParseError as e:
+            logger.error(f"Failed to parse Namecheap API response: {e}")
+            logger.error(f"Response content: {response.content}")
+            return False
+        except Exception as e:
+            logger.error(f"Unexpected error in Namecheap API connection: {e}")
+            return False
+
+    def get_domains(self):
+        # Implement this method to fetch domains from Namecheap
+        # This is a placeholder implementation
+        logger.info("Fetching domains from Namecheap")
+        return []  # Return an empty list for now
+
+    # ... rest of the class implementation ...
     def _make_request(self, command, params=None):
         if params is None:
             params = {}
@@ -27,13 +83,6 @@ class NamecheapAPI:
         response = requests.get(self.base_url, params=params)
         response.raise_for_status()
         return ET.fromstring(response.content)
-
-    def get_domains(self):
-        root = self._make_request('namecheap.domains.getList')
-        domains = []
-        for domain in root.findall(".//Domain"):
-            domains.append(domain.get('Name'))
-        return domains
 
     def get_dns_records(self, domain):
         sld, tld = domain.split('.', 1)
