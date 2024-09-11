@@ -1,11 +1,11 @@
 name_com:
-  api_username: "your_name_com_username"
-  api_token: "your_name_com_api_token"
+  api_username: "seothrone"
+  api_token: "012447b6c68393cbe3ebaf9e3ce3bf81c844955a"
 
 namecheap:
-  api_user: "your_namecheap_username"
-  api_key: "your_namecheap_api_key"
-  client_ip: "your_client_ip"
+  api_user: "thronegamingdomains"
+  api_key: "3df38c22e66a46e9a23dd63c16275e7a"
+  client_ip: "80.85.111.50"
 
 database:
   url: "sqlite:///domainz.db"
