@@ -1,59 +1,57 @@
-import requests
 import logging
-from config import config
+import requests
+from typing import List
+from config import Config
 
 logger = logging.getLogger(__name__)
 
 class NameComAPI:
     def __init__(self):
+        config = Config()
         self.username = config.NAME_COM_API_USERNAME
         self.token = config.NAME_COM_API_TOKEN
-        self.base_url = config.NAME_COM_BASE_URL
+        self.base_url = "https://api.name.com/v4"
 
-    def test_connection(self):
-        url = f"{self.base_url}/hello"
-        try:
-            response = requests.get(url, auth=(self.username, self.token))
-            response.raise_for_status()
-            logger.info("Name.com API connection successful")
-            return True
-        except requests.exceptions.HTTPError as e:
-            logger.error(f"Name.com API connection failed: {e}")
-            logger.error(f"Response content: {e.response.content}")
-            return False
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Name.com API connection failed: {e}")
-            return False
-
-    def get_domains(self):
-        base_url = "https://api.name.com/v4"
+    def get_domains(self) -> List[str]:
+        url = f"{self.base_url}/domains"
         headers = {
             "Authorization": f"Basic {self.username}:{self.token}",
             "Content-Type": "application/json",
         }
+        params = {
+            "page": 1,
+            "perPage": 1000
+        }
 
-        all_domains = []
-        page = 1
-        per_page = 1000  # Maximum allowed by Name.com API
+        try:
+            response = requests.get(url, headers=headers, params=params)
+            response.raise_for_status()
+            data = response.json()
+            domains = data.get("domains", [])
+            domain_names = [domain["domainName"] for domain in domains]
+            logger.info(f"Retrieved {len(domain_names)} domains from Name.com")
+            return domain_names
+        except requests.RequestException as e:
+            logger.error(f"Failed to retrieve domains from Name.com: {str(e)}")
+            return []
 
-        while True:
-            url = f"{base_url}/domains?page={page}&perPage={per_page}"
-            try:
-                response = requests.get(url, headers=headers)
-                response.raise_for_status()
-                data = response.json()
-                domains = data.get("domains", [])
-                all_domains.extend([domain["domainName"] for domain in domains])
-
-                if len(domains) < per_page:
-                    break  # We've reached the last page
-                page += 1
-            except requests.exceptions.RequestException as e:
-                logger.error(f"Error fetching domains from Name.com: {e}")
-                break
-
-        logger.info(f"Retrieved {len(all_domains)} domains from Name.com")
-        return all_domains
+    def test_connection(self) -> bool:
+        url = f"{self.base_url}/hello"
+        headers = {
+            "Authorization": f"Basic {self.username}:{self.token}",
+            "Content-Type": "application/json",
+        }
+        try:
+            response = requests.get(url, headers=headers)
+            if response.status_code == 200:
+                logger.info("Name.com API connection successful")
+                return True
+            else:
+                logger.error(f"Name.com API connection failed. Status code: {response.status_code}")
+                return False
+        except requests.RequestException as e:
+            logger.error(f"Name.com API connection failed: {str(e)}")
+            return False
     def get_dns_records(self, domain):
         url = f"{self.base_url}/domains/{domain}/records"
         response = requests.get(url, auth=(self.username, self.token))
