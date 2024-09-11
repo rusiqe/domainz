@@ -1,7 +1,10 @@
+import logging
 from database import Database
 from name_com import NameComAPI
 from namecheap import NamecheapAPI
 from config import config
+
+logger = logging.getLogger(__name__)
 
 class DNSManager:
     def __init__(self, database: Database):

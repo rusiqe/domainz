@@ -1,12 +1,15 @@
+import logging
 import requests
 from typing import List, Dict
+from config import config
+
+logger = logging.getLogger(__name__)
 
 class NameComAPI:
     def __init__(self, username: str, token: str):
         self.username = username
         self.token = token
         self.base_url = "https://api.name.com/v4"
-
     def get_domains(self) -> List[Dict]:
         url = f"{self.base_url}/domains"
         headers = {
