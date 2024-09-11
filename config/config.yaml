@@ -1,0 +1,11 @@
+name_com:
+  api_username: "your_name_com_username"
+  api_token: "your_name_com_api_token"
+
+namecheap:
+  api_user: "your_namecheap_username"
+  api_key: "your_namecheap_api_key"
+  client_ip: "your_client_ip"
+
+database:
+  url: "sqlite:///domainz.db"
