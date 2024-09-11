@@ -8,7 +8,6 @@ import logging
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
-
 def main():
     dns_manager = DNSManager()
     session = get_session()
@@ -46,5 +45,16 @@ def main():
     finally:
         session.close()
 
+from database import Database
+from dns_manager import DNSManager
+from web_app import app
+
 if __name__ == "__main__":
+    db = Database('domains.db')
+    db.create_tables()
+
+    dns_manager = DNSManager(db)
+    dns_manager.sync_domains()
+
+    app.run(debug=True)
     main()
