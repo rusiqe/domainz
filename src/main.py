@@ -48,9 +48,10 @@ def main():
 from database import Database
 from dns_manager import DNSManager
 from web_app import app
+from config import config
 
-if __name__ == "__main__":
-    db = Database('domains.db')
+if __name__ == '__main__':
+    db = Database(config.DATABASE_FILE)
     db.create_tables()
 
     dns_manager = DNSManager(db)
