@@ -1,18 +1,13 @@
-import logging
 import requests
-from typing import List
-from config import Config
-
-logger = logging.getLogger(__name__)
+from typing import List, Dict
 
 class NameComAPI:
-    def __init__(self):
-        config = Config()
-        self.username = config.NAME_COM_API_USERNAME
-        self.token = config.NAME_COM_API_TOKEN
+    def __init__(self, username: str, token: str):
+        self.username = username
+        self.token = token
         self.base_url = "https://api.name.com/v4"
 
-    def get_domains(self) -> List[str]:
+    def get_domains(self) -> List[Dict]:
         url = f"{self.base_url}/domains"
         headers = {
             "Authorization": f"Basic {self.username}:{self.token}",
@@ -23,40 +18,39 @@ class NameComAPI:
             "perPage": 1000
         }
 
-        try:
-            response = requests.get(url, headers=headers, params=params)
-            response.raise_for_status()
-            data = response.json()
-            domains = data.get("domains", [])
-            domain_names = [domain["domainName"] for domain in domains]
-            logger.info(f"Retrieved {len(domain_names)} domains from Name.com")
-            return domain_names
-        except requests.RequestException as e:
-            logger.error(f"Failed to retrieve domains from Name.com: {str(e)}")
-            return []
+        response = requests.get(url, headers=headers, params=params)
+        response.raise_for_status()
+        data = response.json()
+        return data.get("domains", [])
 
-    def test_connection(self) -> bool:
-        url = f"{self.base_url}/hello"
+    def get_dns_records(self, domain: str) -> List[Dict]:
+        url = f"{self.base_url}/domains/{domain}/records"
         headers = {
             "Authorization": f"Basic {self.username}:{self.token}",
             "Content-Type": "application/json",
         }
-        try:
-            response = requests.get(url, headers=headers)
-            if response.status_code == 200:
-                logger.info("Name.com API connection successful")
-                return True
-            else:
-                logger.error(f"Name.com API connection failed. Status code: {response.status_code}")
-                return False
-        except requests.RequestException as e:
-            logger.error(f"Name.com API connection failed: {str(e)}")
-            return False
-    def get_dns_records(self, domain):
-        url = f"{self.base_url}/domains/{domain}/records"
-        response = requests.get(url, auth=(self.username, self.token))
+
+        response = requests.get(url, headers=headers)
         response.raise_for_status()
-        return response.json()['records']
+        data = response.json()
+        return data.get("records", [])
+
+    def update_dns_record(self, domain: str, record_id: str, record_type: str, host: str, answer: str, ttl: int):
+        url = f"{self.base_url}/domains/{domain}/records/{record_id}"
+        headers = {
+            "Authorization": f"Basic {self.username}:{self.token}",
+            "Content-Type": "application/json",
+        }
+        data = {
+            "type": record_type,
+            "host": host,
+            "answer": answer,
+            "ttl": ttl
+        }
+
+        response = requests.put(url, headers=headers, json=data)
+        response.raise_for_status()
+        return response.json()
 
     def create_dns_record(self, domain, record_type, host, answer, ttl):
         url = f"{self.base_url}/domains/{domain}/records"
