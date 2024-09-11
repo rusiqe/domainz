@@ -26,17 +26,34 @@ class NameComAPI:
             return False
 
     def get_domains(self):
-        url = f"{self.base_url}/domains"
-        try:
-            response = requests.get(url, auth=(self.username, self.token))
-            response.raise_for_status()
-            domains = response.json().get('domains', [])
-            logger.info(f"Retrieved {len(domains)} domains from Name.com")
-            return [domain['domainName'] for domain in domains]
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Error fetching domains from Name.com: {e}")
-            return []
+        base_url = "https://api.name.com/v4"
+        headers = {
+            "Authorization": f"Basic {self.username}:{self.token}",
+            "Content-Type": "application/json",
+        }
 
+        all_domains = []
+        page = 1
+        per_page = 1000  # Maximum allowed by Name.com API
+
+        while True:
+            url = f"{base_url}/domains?page={page}&perPage={per_page}"
+            try:
+                response = requests.get(url, headers=headers)
+                response.raise_for_status()
+                data = response.json()
+                domains = data.get("domains", [])
+                all_domains.extend([domain["domainName"] for domain in domains])
+
+                if len(domains) < per_page:
+                    break  # We've reached the last page
+                page += 1
+            except requests.exceptions.RequestException as e:
+                logger.error(f"Error fetching domains from Name.com: {e}")
+                break
+
+        logger.info(f"Retrieved {len(all_domains)} domains from Name.com")
+        return all_domains
     def get_dns_records(self, domain):
         url = f"{self.base_url}/domains/{domain}/records"
         response = requests.get(url, auth=(self.username, self.token))
