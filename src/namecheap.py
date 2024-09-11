@@ -1,7 +1,6 @@
-import logging
-from typing import List
 import requests
 import xml.etree.ElementTree as ET
+from typing import List, Dict
 from config import config
 
 logger = logging.getLogger(__name__)
