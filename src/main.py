@@ -1,6 +1,8 @@
+import os
+os.environ['PYTHONWARNINGS'] = 'ignore:Unverified HTTPS request'
+
 import urllib3
-import warnings
-warnings.filterwarnings("ignore", category=urllib3.exceptions.NotOpenSSLWarning)
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 from dns_manager import DNSManager
 from database import get_session, Domain, DNSRecord
@@ -65,4 +67,5 @@ def main():
         session.close()
 
 if __name__ == "__main__":
+    python3 src/main.py
     main()

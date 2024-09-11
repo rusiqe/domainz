@@ -1,11 +1,10 @@
+
 name_com:
-  api_username: "seothrone"
-  api_token: "012447b6c68393cbe3ebaf9e3ce3bf81c844955a"
+  base_url: "https://api.name.com/v4"
 
 namecheap:
-  api_user: "thronegamingdomains"
-  api_key: "3df38c22e66a46e9a23dd63c16275e7a"
-  client_ip: "80.85.111.50"
+  base_url: "https://api.namecheap.com/xml.response"
 
 database:
-  url: "sqlite:///domainz.db"
+  # The actual URL will be loaded from environment variables
+  use_env_url: true

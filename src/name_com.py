@@ -1,15 +1,14 @@
 import requests
-import yaml
+import logging
+from config import config
+
+logger = logging.getLogger(__name__)
 
 class NameComAPI:
     def __init__(self):
-        with open('config/config.yaml', 'r') as f:
-            config = yaml.safe_load(f)
-        
-        self.username = config['name_com']['api_username']
-        self.token = config['name_com']['api_token']
-        self.base_url = "https://api.name.com/v4"
-
+        self.username = config.NAME_COM_API_USERNAME
+        self.token = config.NAME_COM_API_TOKEN
+        self.base_url = config.NAME_COM_BASE_URL
     def get_domains(self):
         url = f"{self.base_url}/domains"
         response = requests.get(url, auth=(self.username, self.token))
