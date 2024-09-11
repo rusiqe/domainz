@@ -14,20 +14,11 @@ class Database:
 
     def create_tables(self):
         self._execute_query('''
-            CREATE TABLE IF NOT EXISTS accounts (
-                id INTEGER PRIMARY KEY,
-                registrar TEXT NOT NULL,
-                username TEXT NOT NULL,
-                api_key TEXT NOT NULL,
-                api_secret TEXT NOT NULL
-            )
-        ''')
-        self._execute_query('''
             CREATE TABLE IF NOT EXISTS domains (
                 id INTEGER PRIMARY KEY,
                 name TEXT NOT NULL,
-                account_id INTEGER,
-                FOREIGN KEY (account_id) REFERENCES accounts (id)
+                registrar TEXT NOT NULL,
+                account_username TEXT NOT NULL
             )
         ''')
         self._execute_query('''
@@ -42,29 +33,19 @@ class Database:
             )
         ''')
 
-    def add_account(self, registrar: str, username: str, api_key: str, api_secret: str):
+    def add_domain(self, name: str, registrar: str, account_username: str):
         self._execute_query(
-            "INSERT INTO accounts (registrar, username, api_key, api_secret) VALUES (?, ?, ?, ?)",
-            (registrar, username, api_key, api_secret)
-        )
-
-    def get_accounts(self) -> List[Dict]:
-        cursor = self._execute_query("SELECT * FROM accounts")
-        return [dict(zip([column[0] for column in cursor.description], row)) for row in cursor.fetchall()]
-
-    def add_domain(self, name: str, account_id: int):
-        self._execute_query(
-            "INSERT INTO domains (name, account_id) VALUES (?, ?)",
-            (name, account_id)
+            "INSERT OR REPLACE INTO domains (name, registrar, account_username) VALUES (?, ?, ?)",
+            (name, registrar, account_username)
         )
 
     def get_domains(self) -> List[Dict]:
-        cursor = self._execute_query('''
-            SELECT domains.*, accounts.username, accounts.registrar
-            FROM domains
-            JOIN accounts ON domains.account_id = accounts.id
-        ''')
+        cursor = self._execute_query("SELECT * FROM domains")
         return [dict(zip([column[0] for column in cursor.description], row)) for row in cursor.fetchall()]
+
+    def get_domain(self, domain_id: int) -> Dict:
+        cursor = self._execute_query("SELECT * FROM domains WHERE id = ?", (domain_id,))
+        return dict(zip([column[0] for column in cursor.description], cursor.fetchone()))
 
     def add_dns_record(self, domain_id: int, record_type: str, host: str, value: str, ttl: int):
         self._execute_query(
