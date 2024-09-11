@@ -32,6 +32,16 @@ class Database:
                 FOREIGN KEY (domain_id) REFERENCES domains (id)
             )
         ''')
+        # Add a new table for accounts
+        self._execute_query('''
+            CREATE TABLE IF NOT EXISTS accounts (
+                id INTEGER PRIMARY KEY,
+                registrar TEXT NOT NULL,
+                username TEXT NOT NULL,
+                api_key TEXT NOT NULL,
+                api_secret TEXT
+            )
+        ''')
 
     def add_domain(self, name: str, registrar: str, account_username: str):
         self._execute_query(
@@ -62,3 +72,13 @@ class Database:
             "UPDATE dns_records SET type = ?, host = ?, value = ?, ttl = ? WHERE id = ?",
             (record_type, host, value, ttl, record_id)
         )
+
+    def add_account(self, registrar: str, username: str, api_key: str, api_secret: str = None):
+        self._execute_query(
+            "INSERT INTO accounts (registrar, username, api_key, api_secret) VALUES (?, ?, ?, ?)",
+            (registrar, username, api_key, api_secret)
+        )
+
+    def get_accounts(self) -> List[Dict]:
+        cursor = self._execute_query("SELECT * FROM accounts")
+        return [dict(zip([column[0] for column in cursor.description], row)) for row in cursor.fetchall()]
