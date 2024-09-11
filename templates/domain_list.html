@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -6,10 +5,14 @@
 </head>
 <body>
     <h1>Domains</h1>
-    <ul>
-    {% for domain in domains %}
-        <li>{{ domain.name }} ({{ domain.registrar }} - {{ domain.account_username }})</li>
-    {% endfor %}
-    </ul>
+    {% if domains %}
+        <ul>
+        {% for domain in domains %}
+            <li>{{ domain.name }} ({{ domain.registrar }} - {{ domain.account_username }})</li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>No domains found. Please check your API credentials and ensure that the sync process is working correctly.</p>
+    {% endif %}
 </body>
 </html>

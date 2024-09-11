@@ -4,6 +4,8 @@ from name_com import NameComAPI
 from namecheap import NamecheapAPI
 from config import config
 
+# import dns.resolver
+
 logger = logging.getLogger(__name__)
 
 class DNSManager:
@@ -11,51 +13,41 @@ class DNSManager:
         self.database = database
 
     def sync_domains(self):
-        accounts = self.database.get_accounts()
-        for account in accounts:
-            if account['registrar'] == 'name.com':
-                api = NameComAPI(account['username'], account['api_key'])
-            elif account['registrar'] == 'namecheap':
-                api = NamecheapAPI(account['username'], account['api_key'], account['username'], account['api_secret'])
-            else:
-                continue
+        total_domains = 0
 
-            domains = api.get_domains()
-            for domain in domains:
-                self.database.add_domain(domain['name'], account['id'])
+        # Sync domains from Name.com accounts
+        for account in config.NAME_COM_ACCOUNTS:
+            if account['username'] and account['token']:
+                api = NameComAPI(account['username'], account['token'])
+                domains = api.get_domains()
+                logger.info(f"Retrieved {len(domains)} domains from Name.com account {account['username']}")
+                for domain in domains:
+                    self.database.add_domain(domain['domainName'], 'name.com', account['username'])
+                total_domains += len(domains)
 
-    def get_dns_records(self, domain_name: str, account_id: int):
-        account = self.database.get_account(account_id)
-        if account['registrar'] == 'name.com':
-            api = NameComAPI(account['username'], account['api_key'])
-        elif account['registrar'] == 'namecheap':
-            api = NamecheapAPI(account['username'], account['api_key'], account['username'], account['api_secret'])
-        else:
-            return []
+        # Sync domains from Namecheap accounts
+        for account in config.NAMECHEAP_ACCOUNTS:
+            if all(account.values()):  # Check if all required fields are present
+                api = NamecheapAPI(account['api_user'], account['api_key'], account['username'], account['client_ip'])
+                domains = api.get_domains()
+                logger.info(f"Retrieved {len(domains)} domains from Namecheap account {account['username']}")
+                for domain in domains:
+                    self.database.add_domain(domain['Name'], 'namecheap', account['username'])
+                total_domains += len(domains)
 
-        return api.get_dns_records(domain_name)
+        logger.info(f"Total domains synced: {total_domains}")
 
-    def update_dns_record(self, domain_name: str, account_id: int, record_id: str, record_type: str, host: str, value: str, ttl: int):
-        account = self.database.get_account(account_id)
-        if account['registrar'] == 'name.com':
-            api = NameComAPI(account['username'], account['api_key'])
-            api.update_dns_record(domain_name, record_id, record_type, host, value, ttl)
-        elif account['registrar'] == 'namecheap':
-            api = NamecheapAPI(account['username'], account['api_key'], account['username'], account['api_secret'])
-            api.update_dns_record(domain_name, record_type, host, value, ttl, record_id)
+    def update_dns_record(self, domain_id: int, record_id: str, record_type: str, host: str, value: str, ttl: int):
+        domain = self.database.get_domain(domain_id)
+        if domain['registrar'] == 'name.com':
+            account = next((acc for acc in config.NAME_COM_ACCOUNTS if acc['username'] == domain['account_username']), None)
+            if account:
+                api = NameComAPI(account['username'], account['token'])
+                api.update_dns_record(domain['name'], record_id, record_type, host, value, ttl)
+        elif domain['registrar'] == 'namecheap':
+            account = next((acc for acc in config.NAMECHEAP_ACCOUNTS if acc['username'] == domain['account_username']), None)
+            if account:
+                api = NamecheapAPI(account['api_user'], account['api_key'], account['username'], account['client_ip'])
+                api.update_dns_record(domain['name'], record_type, host, value, ttl, record_id)
 
-        self.database.update_dns_record(record_id, record_type, host, value, ttl)
-
-    def check_dns(self, domain):
-        try:
-            a_records = dns.resolver.resolve(domain, 'A')
-            mx_records = dns.resolver.resolve(domain, 'MX')
-            txt_records = dns.resolver.resolve(domain, 'TXT')
-            
-            return {
-                'A': [str(r) for r in a_records],
-                'MX': [str(r) for r in mx_records],
-                'TXT': [str(r) for r in txt_records]
-            }
-        except dns.resolver.NXDOMAIN:
-            return None
+        self.database.update_dns_record(record_id, record_type, host, value, ttl)            return None

@@ -1,5 +1,8 @@
 import sqlite3
+import logging
 from typing import List, Dict
+
+logger = logging.getLogger(__name__)
 
 class Database:
     def __init__(self, db_file: str):
@@ -48,11 +51,11 @@ class Database:
             "INSERT OR REPLACE INTO domains (name, registrar, account_username) VALUES (?, ?, ?)",
             (name, registrar, account_username)
         )
-
     def get_domains(self) -> List[Dict]:
         cursor = self._execute_query("SELECT * FROM domains")
-        return [dict(zip([column[0] for column in cursor.description], row)) for row in cursor.fetchall()]
-
+        domains = [dict(zip([column[0] for column in cursor.description], row)) for row in cursor.fetchall()]
+        logger.info(f"Retrieved {len(domains)} domains from the database")
+        return domains
     def get_domain(self, domain_id: int) -> Dict:
         cursor = self._execute_query("SELECT * FROM domains WHERE id = ?", (domain_id,))
         return dict(zip([column[0] for column in cursor.description], cursor.fetchone()))

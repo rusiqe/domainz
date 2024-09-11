@@ -1,16 +1,27 @@
+import os
 from flask import Flask, render_template, request, redirect, url_for
 from database import Database
 from dns_manager import DNSManager
 from config import config
 
-app = Flask(__name__)
+# Get the absolute path of the directory containing this file
+base_dir = os.path.abspath(os.path.dirname(__file__))
+# Go up one level to the project root
+project_root = os.path.dirname(base_dir)
+# Set the template folder path
+template_dir = os.path.join(project_root, 'templates')
+
+app = Flask(__name__, template_folder=template_dir)
 db = Database(config.DATABASE_FILE)
-dns_manager = DNSManager(db)
+dns_manager = DNSManager(db)  # This line is now correct
 
 @app.route('/')
 def index():
     domains = db.get_domains()
+    print("Retrieved domains:", domains)  # Debug print
     return render_template('domain_list.html', domains=domains)
+
+# ... (rest of your routes)
 
 if __name__ == '__main__':
     db.create_tables()
