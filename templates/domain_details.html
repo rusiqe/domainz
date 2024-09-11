@@ -1,0 +1,42 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Domain Details</title>
+</head>
+<body>
+    <h1>{{ domain.name }}</h1>
+    <p>Registrar: {{ domain.registrar }}</p>
+    <p>Account: {{ domain.account_username }}</p>
+    
+    <h2>DNS Records</h2>
+    <table>
+        <tr>
+            <th>Type</th>
+            <th>Host</th>
+            <th>Value</th>
+            <th>TTL</th>
+        </tr>
+        {% for record in dns_records %}
+        <tr>
+            <td>{{ record.type }}</td>
+            <td>{{ record.host }}</td>
+            <td>{{ record.value }}</td>
+            <td>{{ record.ttl }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h2>Update DNS Record</h2>
+    <form action="{{ url_for('update_record') }}" method="post">
+        <input type="hidden" name="domain_id" value="{{ domain.id }}">
+        <label>Record ID: <input type="text" name="record_id" required></label><br>
+        <label>Type: <input type="text" name="type" required></label><br>
+        <label>Host: <input type="text" name="host" required></label><br>
+        <label>Value: <input type="text" name="value" required></label><br>
+        <label>TTL: <input type="number" name="ttl" required></label><br>
+        <input type="submit" value="Update Record">
+    </form>
+
+</body>
+</html>
