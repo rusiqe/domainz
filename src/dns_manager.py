@@ -1,6 +1,10 @@
 from name_com import NameComAPI
 from namecheap import NamecheapAPI
 import dns.resolver
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class DNSManager:
     def __init__(self):
@@ -8,10 +12,22 @@ class DNSManager:
         self.namecheap = NamecheapAPI()
 
     def get_all_domains(self):
-        name_com_domains = self.name_com.get_domains()
-        namecheap_domains = self.namecheap.get_domains()
-        return name_com_domains + namecheap_domains
+        domains = []
+        try:
+            name_com_domains = self.name_com.get_domains()
+            domains.extend(name_com_domains)
+            logger.info(f"Retrieved {len(name_com_domains)} domains from Name.com")
+        except Exception as e:
+            logger.error(f"Error retrieving domains from Name.com: {str(e)}")
 
+        try:
+            namecheap_domains = self.namecheap.get_domains()
+            domains.extend(namecheap_domains)
+            logger.info(f"Retrieved {len(namecheap_domains)} domains from Namecheap")
+        except Exception as e:
+            logger.error(f"Error retrieving domains from Namecheap: {str(e)}")
+
+        return domains
     def get_dns_records(self, domain):
         try:
             return self.name_com.get_dns_records(domain)
