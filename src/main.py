@@ -23,4 +23,4 @@ if __name__ == '__main__':
         logger.warning("No domains were synced. Check your API credentials and internet connection.")
 
     logger.info("Starting the web application...")
-    app.run(debug=True)    app.run(debug=True)
+    app.run(debug=True)
